@@ -130,7 +130,7 @@ func (config *RunnableExperiment) Run(tracker func(<-chan *Sample)) error {
 
 func (ex *ExecutableExperiment) Execute() {
 	Execute(RepeatEveryUntil(ex.Interval, ex.Stop, func() {
-		ExecuteConcurrently(ex.Concurrency, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
+		ExecuteConcurrently(ex.Concurrency, ex.Iterations, Repeat(ex.Iterations, Counted(ex.workers, TimedWithWorker(ex.iteration, ex.Worker, ex.Workload))))
 	}, ex.quit))
 
 	close(ex.iteration)

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"fmt"
 )
 
 type StepResult struct {
@@ -123,16 +124,55 @@ func Execute(tasks <-chan func()) {
 	}
 }
 
-func ExecuteConcurrently(workers int, tasks <-chan func()) {
+func ExecuteConcurrently(totalWorkers int, iteration int, tasks <-chan func()) {
 	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
+	var count int = 0
+	var steps = iteration / totalWorkers
+	var rampup = steps
+	workers := make(chan int, totalWorkers)
+
+	
+	for i:=0; i < totalWorkers; i++ {
+		workers <- 1
+	}
+
+	for count <= iteration {
+		fmt.Printf("count %d, rampup %d \n", count, rampup)
+		// if count == rampup {
+		// 	//workers <- 1		
+		// 	rampup += steps
+		// }
+		<-workers
+		
+
 		wg.Add(1)
-		go func(t <-chan func()) {
-			defer wg.Done()
+
+		go func(t <-chan func()) {			
+			defer wg.Done()				
 			for task := range t {
 				task()
 			}
+			workers <- 1
 		}(tasks)
+
+		count += 1
+		
+		
 	}
 	wg.Wait()
+	
 }
+
+// func ExecuteConcurrently(workers int, tasks <-chan func()) {
+// 	var wg sync.WaitGroup
+// 	for i := 0; i < workers; i++ {
+// 		wg.Add(1)
+// 		go func(t <-chan func()) {
+// 			defer wg.Done()
+// 			for task := range t {
+// 				task()
+// 			}
+// 		}(tasks)
+// 	}
+// 	wg.Wait()
+// }
