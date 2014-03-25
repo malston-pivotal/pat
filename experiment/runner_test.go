@@ -24,15 +24,18 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 		BeforeEach(func() {
 			sample1 = &Sample{}
 			sample2 = &Sample{}
-			worker = NewWorker()
+			worker = NewLocalWorker()
+
 			executorFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, quit chan bool) Executable {
 				executor = &DummyExecutor{iterationResults, workers, errors, executorFunc}
 				return executor
 			}
+
 			samplerFactory := func(iterationResults chan IterationResult, errors chan error, workers chan int, samples chan *Sample, quit chan bool) Samplable {
 				sampler = &DummySampler{samples, iterationResults, workers, errors, sampleFunc}
 				return sampler
 			}
+
 			config = &RunnableExperiment{ExperimentConfiguration{5, 2, 1, 1, worker, "push"}, executorFactory, samplerFactory}
 		})
 
@@ -174,8 +177,8 @@ var _ = Describe("ExperimentConfiguration and Sampler", func() {
 
 		It("Counts errors", func() {
 			go func() {
-				iteration <- IterationResult{0, nil, errors.New("fishfingers burnt")}
-				iteration <- IterationResult{0, nil, errors.New("toast not buttered")}
+				iteration <- IterationResult{0, nil, &EncodableError{"fishfingers burnt"}}
+				iteration <- IterationResult{0, nil, &EncodableError{"toast not buttered"}}
 			}()
 
 			Ω((<-samples).TotalErrors).Should(Equal(1))
